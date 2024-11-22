@@ -5,22 +5,30 @@
 import java.io.*;
 
 public class HttpResponse {
-    final static String CRLF = "\r\n";  // 換行符
-    final static int BUF_SIZE = 8192; // 讀取緩衝區大小（8KB）
-    final static int MAX_OBJECT_SIZE = 100000; // 最大物件大小 - 100KB
+    /** HTTP 標頭分隔符：回車換行 */
+    final static String CRLF = "\r\n";  
+    /** 讀取緩衝區大小（8KB）*/
+    final static int BUF_SIZE = 8192; 
+    /** 最大回應主體大小（100KB）*/
+    final static int MAX_OBJECT_SIZE = 100000; 
 
-    String version;            // HTTP 版本
-    int status;                // 狀態碼
-    String statusLine = "";    // 狀態行
-    String headers = "";       // 回應標頭
+    /** HTTP 協定版本 */
+    String version;            
+    /** HTTP 狀態碼（如 200, 404, 500 等）*/
+    int status;                
+    /** HTTP 狀態行（包含版本、狀態碼和狀態描述）*/
+    String statusLine = "";   
+    /** 回應標頭的完整文字 */
+    String headers = "";       
 
-    byte[] body = new byte[MAX_OBJECT_SIZE]; // 回應主體
+    /** 回應主體的位元組陣列 */
+    byte[] body = new byte[MAX_OBJECT_SIZE]; 
 
     /**
      * 從伺服器讀取回應
      */
     public HttpResponse(DataInputStream fromServer) {
-        /* 回應內容長度 */
+        /* 回應內容長度，-1 表示未指定長度 */
         int length = -1;
         boolean gotStatusLine = false;
 
@@ -32,7 +40,7 @@ public class HttpResponse {
             // 逐行讀取直到遇到空行（標頭結束）
             while (line != null && line.length() != 0) {
                 if (!gotStatusLine) {
-                    // 第一行是狀態行
+                    // 解析第一行（狀態行）
                     statusLine = line;
                     // 解析狀態碼
                     String[] parts = statusLine.split(" ");
@@ -45,11 +53,11 @@ public class HttpResponse {
                     }
                     gotStatusLine = true;
                 } else {
-                    // 其餘行是標頭
+                    // 儲存標頭行
                     headers += line + CRLF;
                 }
 
-                // 解析 Content-Length 標頭
+                // 解析 Content-Length 標頭以確定回應主體大小
                 if (line.toLowerCase().startsWith("content-length:")) {
                     String[] tmp = line.split(" ");
                     length = Integer.parseInt(tmp[1].trim());
@@ -68,16 +76,16 @@ public class HttpResponse {
             int bytesRead;
             
             if (length != -1) {
-                // 有 Content-Length 的情況
+                // 處理有 Content-Length 的回應
                 int remainingBytes = length;
                 while (remainingBytes > 0) {
                     bytesRead = fromServer.read(buf, 0, Math.min(BUF_SIZE, remainingBytes));
-                    if (bytesRead == -1) break;
+                    if (bytesRead == -1) break;  // 連接提前關閉
                     bodyStream.write(buf, 0, bytesRead);
                     remainingBytes -= bytesRead;
                 }
             } else {
-                // 沒有 Content-Length 的情況
+                // 處理沒有 Content-Length 的回應（讀取直到連接關閉）
                 while ((bytesRead = fromServer.read(buf)) != -1) {
                     bodyStream.write(buf, 0, bytesRead);
                 }

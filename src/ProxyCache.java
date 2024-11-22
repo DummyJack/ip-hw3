@@ -11,12 +11,17 @@ import java.util.concurrent.Executors;
 public class ProxyCache {
     // 代理伺服器 port
     private static int port;
-    // 用於客戶端連接的伺服器 Socket
+    
+    /** 用於接受客戶端連接的伺服器 Socket */
     private static ServerSocket socket;
-    // 用於儲存回應的 Cache 
+    
+    /** 用於儲存 HTTP 回應的快取，key 為請求 URI，value 為回應內容 */
     private static HashMap<String, byte[]> cache = new HashMap<>();
-    // 處理客戶端請求的執行緒池
+    
+    /** 設定執行緒池大小，限制同時處理的最大連接數 */
     private static final int THREAD_POOL_SIZE = 10;
+    
+    /** 執行緒池，用於管理並發的客戶端請求 */
     private static final ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
 
     /** 建立 ProxyCache 物件和 Socket */
@@ -33,8 +38,15 @@ public class ProxyCache {
     /**
      * RequestHandler 類別負責處理單一客戶端連接的請求
      * 實現 Runnable 介面以支援多執行緒處理
+     * 
+     * 主要功能：
+     * - 處理 HTTP 請求和回應
+     * - 管理快取機制
+     * - 建立 HTTPS 通道
+     * - 錯誤處理
      */
     private static class RequestHandler implements Runnable {
+        /** 當前處理的客戶端連接 Socket */
         private final Socket client;
 
         public RequestHandler(Socket client) {
@@ -87,7 +99,6 @@ public class ProxyCache {
 
         /**
          * 處理 HTTPS 請求的方法
-         * 建立安全通道在客戶端和目標伺服器之間
          */
         private void handleHttpsRequest(Socket client, HttpRequest request) throws IOException {
             // 建立到目標伺服器的連接
@@ -124,10 +135,12 @@ public class ProxyCache {
 
         /**
          * StreamForwarder 類別用於在兩個串流之間轉發資料
-         * 主要用於 HTTPS 通道的資料傳輸
+         * 用於 HTTPS 通道的資料傳輸，實現了全雙工通訊
          */
         private static class StreamForwarder implements Runnable {
+            /** 來源資料串流 */
             private final InputStream in;
+            /** 目標資料串流 */
             private final OutputStream out;
 
             public StreamForwarder(InputStream in, OutputStream out) {
@@ -282,7 +295,9 @@ public class ProxyCache {
         }
     }
 
-    /** 讀取命令列參數並啟動代理伺服器 */
+    /**
+     * 主程式進入點
+     */
     public static void main(String args[]) {
         int myPort = 0;
 
