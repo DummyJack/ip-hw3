@@ -104,7 +104,7 @@ public class ProxyCache {
                                                                  server.getOutputStream()));
             // 建立伺服器到客戶端的通道
             Thread serverToClient = new Thread(new StreamForwarder(server.getInputStream(), 
-                                                                 server.getOutputStream()));
+                                                                 client.getOutputStream()));
 
             // 啟動雙向通道
             clientToServer.start();
@@ -207,7 +207,7 @@ public class ProxyCache {
             String requestURI = request.URI;
 
             try {
-                // 先檢查求的 URI 是否在 Cache 中
+                // 先檢求的 URI 是否在 Cache 中
                 byte[] cachedContent = null;
                 synchronized (cache) {
                     cachedContent = cache.get(requestURI);
